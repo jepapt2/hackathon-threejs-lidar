@@ -1,5 +1,8 @@
 import { Suspense } from 'react';
 import { OrbitControls } from '@react-three/drei';
+import { Model } from './components/Model';
+// Vite: ?url でビルド後のパス文字列として取得
+import stegosaursUrl from './assets/glb/stegosaurs.glb?url';
 
 
 
@@ -19,7 +22,7 @@ export const Scene = () => {
 
             {/* 3D Models / Future components */}
             <Suspense fallback={null}>
-                {/* <Model url="/models/sample.glb" /> */}
+                <Model url={stegosaursUrl} />
             </Suspense>
         </>
     );
