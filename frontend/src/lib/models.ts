@@ -7,12 +7,8 @@ import { supabase } from './supabaseClient';
 export type Item = {
     id: string;
     name: string;
-    file_path?: string | null;
-    file_url?: string | null; // 公開バケットの場合の公開URL
-    file_size?: number | null;
-    content_type?: string | null;
+    url: string;
     created_at: string;
-    owner_id?: string | null;
 };
 
 export async function listItems(): Promise<Item[]> {

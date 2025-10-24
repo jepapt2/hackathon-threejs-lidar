@@ -3,7 +3,7 @@ import { listItems, deleteItem, createItem } from '../lib/models';
 import type { Item } from '../lib/models';
 
 
-export const ItemsDebug: React.FC = () => {
+export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void }> = ({ onSelect }) => {
     const [items, setItems] = useState<Item[]>([]);
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
@@ -63,11 +63,15 @@ export const ItemsDebug: React.FC = () => {
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {items.map(i => (
-                    <li key={i.id} style={{ borderBottom: '1px solid #333', padding: '4px 0' }}>
+                    <li
+                        key={i.id}
+                        style={{ borderBottom: '1px solid #333', padding: '4px 0', cursor: i.url ? 'pointer' : 'default' }}
+                        onClick={() => { if (i.url) onSelect?.(i); }}
+                    >
                         <strong>{i.name}</strong><br />
-                        {i.file_url && <a href={i.file_url} target="_blank" rel="noreferrer" style={{ color: '#4faaff' }}>file</a>}<br />
+                        {i.url && <a href={i.url} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" style={{ color: '#4faaff' }}>file</a>}<br />
                         <small>{i.created_at}</small><br />
-                        <button onClick={() => handleDelete(i.id)}>Del</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(i.id); }}>Del</button>
                     </li>
                 ))}
             </ul>
