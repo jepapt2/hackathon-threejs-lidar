@@ -51,6 +51,9 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void }> = ({ onSe
         }
     }
 
+    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const ACCEPT = '.glb,.gltf,model/gltf-binary,application/octet-stream'; // 拡張
+
     return (
         <div style={{ position: 'absolute', top: 0, right: 0, width: 280, background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem' }}>
             <h3 style={{ marginTop: 0 }}>Items Debug</h3>
@@ -58,7 +61,19 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void }> = ({ onSe
             {error && <p style={{ color: 'tomato' }}>{error}</p>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                 <input style={{ width: '100%' }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Model name" />
-                <input type="file" accept=".glb,model/gltf-binary" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                {/* iPad で accept によりファイルが半透明(選択不可)になる場合があるため、iOS では accept を外す */}
+                <input
+                    type="file"
+                    accept={isIOS ? undefined : ACCEPT}
+                    onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        if (f) {
+                            console.log('[ItemsDebug] file selected', { name: f.name, size: f.size, type: f.type });
+                        }
+                        setFile(f);
+                    }}
+                />
+                {isIOS && <small style={{ opacity: 0.7 }}>iOS: ファイルが選択できない場合は Files アプリから共有 → このブラウザで開くを試してください</small>}
                 <button disabled={!name || loading} onClick={handleCreate}>Add</button>
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>

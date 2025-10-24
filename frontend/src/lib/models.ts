@@ -24,8 +24,10 @@ export async function createItem(params: { name: string; file?: File; owner_id?:
     if (params.file) {
         const bucket = 'models';
         const path = `${Date.now()}-${params.file.name}`;
+        const mime = params.file.type && params.file.type.trim() !== '' ? params.file.type : 'model/gltf-binary';
+        console.log('[createItem] uploading file', { name: params.file.name, size: params.file.size, type: params.file.type, usedContentType: mime });
         const { data: uploadData, error: uploadError } = await supabase.storage.from(bucket).upload(path, params.file, {
-            contentType: params.file.type,
+            contentType: mime,
             upsert: false,
         });
         if (uploadError) throw uploadError;
@@ -34,17 +36,20 @@ export async function createItem(params: { name: string; file?: File; owner_id?:
             file_path: uploadData?.path ?? path,
             file_url: publicInfo.data.publicUrl,
             file_size: params.file.size,
-            content_type: params.file.type,
+            content_type: mime,
         };
+
     }
 
     const insertPayload = {
         name: params.name,
         url: uploadMeta.file_url,
     };
+    console.log('[createItem] inserting row', insertPayload);
 
     const { data, error } = await supabase.from('models').insert(insertPayload).select().single();
     if (error) throw error;
+    console.log('[createItem] insert success', data);
     return data as Item;
 }
 
