@@ -1,4 +1,4 @@
-# iPad LiDAR + Three.js + Amplify プロジェクト手順書
+# ハッカソン　threejs-lidar
 
 ## 目的
 
@@ -16,7 +16,7 @@ iPad の LiDAR でスキャンした 3D データ (GLB / PLY) を Web 上にア�
 - モデル比較 (過去との差分可視化)
 - オブジェクト呼び出し (人間・家具などプリセット挿入)
 
-技術スタック: Vite/Three.js
+技術スタック: Vite / React / Three.js/ Amplify REST
 
 
 
