@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import { OrbitControls } from '@react-three/drei';
 import { Model } from './components/Model';
+import { RulerTool } from './tools/RulerTool';
 // Vite: ?url でビルド後のパス文字列として取得
 
 
 export const Scene = ({ modelUrl }: { modelUrl?: string }) => {
-    console.log('Scene modelUrl:', modelUrl);
     return (
         <>
             {/* Lighting */}
@@ -18,6 +18,9 @@ export const Scene = ({ modelUrl }: { modelUrl?: string }) => {
             {/* Helpers (開発中のみ) */}
             <gridHelper args={[10, 10]} />
             <axesHelper args={[1]} />
+
+            {/* Measurement Tool */}
+            <RulerTool />
 
             {/* 3D Models / Future components */}
             <Suspense fallback={null}>
