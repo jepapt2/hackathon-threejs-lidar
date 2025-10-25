@@ -20,36 +20,38 @@ export const ControlPanel: React.FC<{
 
     return (
         <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 40 }}>
-            <button onClick={() => setOpen(o => !o)} style={{ width: 44, height: 44, borderRadius: 8, background: '#222', color: '#fff', border: '1px solid #333' }}>{open ? '×' : '☰'}</button>
+            {/* top menu buttons always visible; clicking opens the lower panel with selected tab */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button onClick={() => { setTab('models'); setOpen(true); }} title='編集' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'models' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>編集</button>
+                <button onClick={() => { setTab('ruler'); setOpen(true); }} title='定規' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'ruler' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>定規</button>
+                <button onClick={() => { setTab('items'); setOpen(true); }} title='モデル' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'items' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>配置</button>
+                <button onClick={() => setOpen(false)} style={{ borderRadius: 6, background: '#222', color: '#fff', border: 'none' }}>×</button>
+            </div>
 
             {open && (
-                <div style={{ marginTop: 8, width: 360, background: '#141414', color: '#eee', border: '1px solid #2b2b2b', borderRadius: 8, boxShadow: '0 6px 20px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', gap: 6, padding: 8, borderBottom: '1px solid #232323' }}>
-                        <button onClick={() => setTab('models')} style={{ flex: 1, background: tab === 'models' ? '#2a6' : 'transparent', color: '#eee', border: 'none', padding: 8 }}>Models</button>
-                        <button onClick={() => setTab('ruler')} style={{ flex: 1, background: tab === 'ruler' ? '#2a6' : 'transparent', color: '#eee', border: 'none', padding: 8 }}>Ruler</button>
-                        <button onClick={() => setTab('items')} style={{ flex: 1, background: tab === 'items' ? '#2a6' : 'transparent', color: '#eee', border: 'none', padding: 8 }}>Items</button>
-                    </div>
+                <div style={{ marginTop: 8, width: 400, background: '#141414', color: '#eee', border: '1px solid #2b2b2b', borderRadius: 8, boxShadow: '0 6px 20px rgba(0,0,0,0.6)', overflow: 'hidden', position: 'relative' }}>
+                    {/* close button inside open panel */}
 
                     <div style={{ padding: 12, maxHeight: 420, overflowY: 'auto' }}>
                         {tab === 'models' && (
                             <div>
-                                <div style={{ fontWeight: 700, marginBottom: 8 }}>Loaded Models</div>
+                                <div style={{ fontWeight: 700, marginBottom: 8 }}>配置済みモデル</div>
                                 <div style={{ maxHeight: 160, overflowY: 'auto', marginBottom: 8 }}>
-                                    {models.length === 0 && <div style={{ color: '#888' }}>No models loaded</div>}
+                                    {models.length === 0 && <div style={{ color: '#888' }}>モデルは読み込まれていません</div>}
                                     {models.map(m => (
                                         <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #222' }}>
                                             <button style={{ flex: 1, textAlign: 'left', background: selectedModelId === m.id ? '#2a6' : 'transparent', color: '#eee', border: 'none', padding: '6px' }} onClick={() => setSelectedModelId(m.id)}>{m.name || m.id}</button>
-                                            <button title='Delete' onClick={() => removeModel(m.id)} style={{ background: 'transparent', color: '#f66', border: 'none' }}>✕</button>
+                                            <button title='削除' onClick={() => removeModel(m.id)} style={{ background: 'transparent', color: '#f66', border: 'none' }}>✕</button>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div style={{ fontWeight: 700, marginBottom: 6 }}>Selected Model</div>
-                                {!sel && <div style={{ color: '#888', marginBottom: 8 }}>— none —</div>}
+                                <div style={{ fontWeight: 700, marginBottom: 6 }}>選択中のモデル</div>
+                                {!sel && <div style={{ color: '#888', marginBottom: 8 }}>— 未選択 —</div>}
                                 {sel && (
                                     <div>
                                         <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{sel.name}</div>
-                                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Position</div>
+                                        <div style={{ fontWeight: 600, marginBottom: 6 }}>位置</div>
                                         {(['x', 'y', 'z'] as const).map(axis => (
                                             <div key={`pos-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, gap: 8 }}>
                                                 <label style={{ width: 18 }}>{axis.toUpperCase()}</label>
@@ -61,7 +63,7 @@ export const ControlPanel: React.FC<{
                                             </div>
                                         ))}
 
-                                        <div style={{ fontWeight: 600, marginTop: 8, marginBottom: 6 }}>Rotation (deg)</div>
+                                        <div style={{ fontWeight: 600, marginTop: 8, marginBottom: 6 }}>回転（°）</div>
                                         {(['x', 'y', 'z'] as const).map(axis => (
                                             <div key={`rot-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, gap: 8 }}>
                                                 <label style={{ width: 18 }}>{axis.toUpperCase()}</label>
@@ -74,7 +76,7 @@ export const ControlPanel: React.FC<{
                                         ))}
 
                                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                                            <button style={{ flex: 1 }} onClick={() => { updateSelectedPosition({ x: 0, y: 0, z: 0 }); updateSelectedRotation({ x: 0, y: 0, z: 0 }); }}>Reset</button>
+                                            <button style={{ flex: 1 }} onClick={() => { updateSelectedPosition({ x: 0, y: 0, z: 0 }); updateSelectedRotation({ x: 0, y: 0, z: 0 }); }}>リセット</button>
                                         </div>
                                     </div>
                                 )}

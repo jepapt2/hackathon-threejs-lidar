@@ -18,6 +18,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -46,12 +47,22 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
-button:focus,
+
+/* Use a single, accessible focus style to avoid double rings from outline + border.
+   Keep a visible focus for keyboard users while removing the browser's default double-outline. */
+button:focus {
+  outline: none;
+}
+
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
+  /* soft ring matching the hover accent color */
+  box-shadow: 0 0 0 4px rgba(100, 108, 255, 0.24);
+  border-color: #646cff;
 }
 
 @media (prefers-color-scheme: light) {
@@ -59,9 +70,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }

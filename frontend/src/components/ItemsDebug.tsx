@@ -54,43 +54,64 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void; inline?: bo
     const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
     const ACCEPT = '.glb,.gltf,model/gltf-binary,application/octet-stream'; // 拡張
 
+    const base: React.CSSProperties = { background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem' };
     const containerStyle: React.CSSProperties = inline
-        ? { width: '100%', background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem', borderRadius: 6 }
-        : { position: 'absolute', top: 0, right: 0, width: 280, background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem' };
+        ? { ...base, width: '100%', borderRadius: 6, boxSizing: 'border-box', overflowX: 'hidden', maxWidth: '100%', overflowWrap: 'break-word' }
+        : { ...base, position: 'absolute', top: 0, right: 0, width: 280, boxSizing: 'border-box' };
 
     return (
         <div style={containerStyle}>
-            <h3 style={{ marginTop: 0 }}>Items Debug</h3>
-            {loading && <p>Loading...</p>}
+            {loading && <p>読み込み中...</p>}
             {error && <p style={{ color: 'tomato' }}>{error}</p>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
-                <input style={{ width: '100%' }} value={name} onChange={(e) => setName(e.target.value)} placeholder="Model name" />
+                <input style={{ width: '100%', boxSizing: 'border-box' }} value={name} onChange={(e) => setName(e.target.value)} placeholder="モデル名" />
                 {/* iPad で accept によりファイルが半透明(選択不可)になる場合があるため、iOS では accept を外す */}
-                <input
-                    type="file"
-                    accept={isIOS ? undefined : ACCEPT}
-                    onChange={(e) => {
-                        const f = e.target.files?.[0] ?? null;
-                        if (f) {
-                            console.log('[ItemsDebug] file selected', { name: f.name, size: f.size, type: f.type });
-                        }
-                        setFile(f);
-                    }}
-                />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                        id="items-file-input"
+                        type="file"
+                        accept={isIOS ? undefined : ACCEPT}
+                        onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            if (f) {
+                                console.log('[ItemsDebug] file selected', { name: f.name, size: f.size, type: f.type });
+                            }
+                            setFile(f);
+                        }}
+                        style={{ display: 'none' }}
+                    />
+                    <label htmlFor='items-file-input' style={{ display: 'inline-block', padding: '6px 10px', background: '#2b2b2b', color: '#fff', borderRadius: 6, cursor: 'pointer', border: '1px solid #333' }}>
+                        {file ? '選択済み: ' + file.name : 'glbファイルをアップロード'}
+                    </label>
+                    {file && <button onClick={() => setFile(null)} style={{ background: 'transparent', color: '#fff', border: '1px solid #444', padding: '6px 8px', borderRadius: 6 }}>クリア</button>}
+                </div>
                 {isIOS && <small style={{ opacity: 0.7 }}>iOS: ファイルが選択できない場合は Files アプリから共有 → このブラウザで開くを試してください</small>}
-                <button disabled={!name || loading} onClick={handleCreate}>Add</button>
+                <button disabled={!name || loading} onClick={handleCreate}>追加</button>
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {items.map(i => (
                     <li
                         key={i.id}
-                        style={{ borderBottom: '1px solid #333', padding: '4px 0', cursor: i.url ? 'pointer' : 'default' }}
-                        onClick={() => { if (i.url) onSelect?.(i); }}
+                        style={{ borderBottom: '1px solid #333', padding: '4px 0', overflowWrap: 'break-word' }}
+
                     >
-                        <strong>{i.name}</strong><br />
-                        {i.url && <a href={i.url} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" style={{ color: '#4faaff' }}>file</a>}<br />
-                        <small>{i.created_at}</small><br />
-                        <button onClick={(e) => { e.stopPropagation(); handleDelete(i.id); }}>Del</button>
+                        <strong style={{ display: 'block', wordBreak: 'break-word' }}>{i.name}</strong>
+
+                        <small style={{ display: 'block', opacity: 0.8 }}>{i.created_at}</small>
+                        <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between" }}>
+                            <button onClick={(e) => {
+                                e.stopPropagation();
+                                if (i.url) onSelect?.(i);
+                            }}>配置</button>
+                            <button style={{ color: '#f66', backgroundColor: 'transparent' }} onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(
+                                    `${i.name} を削除してもよろしいですか？`
+                                )) {
+                                    handleDelete(i.id);
+                                }
+                            }}>削除</button>
+                        </div>
                     </li>
                 ))}
             </ul>

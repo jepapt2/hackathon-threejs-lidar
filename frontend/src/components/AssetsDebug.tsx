@@ -62,22 +62,22 @@ export const AssetsDebug: React.FC = () => {
 
     return (
         <div style={{ padding: '1rem', background: '#111', color: '#eee', fontFamily: 'sans-serif' }}>
-            <h2>Assets Debug</h2>
-            {loading && <p>Loading...</p>}
+            <h2>アセット管理</h2>
+            {loading && <p>読み込み中...</p>}
             {error && <p style={{ color: 'tomato' }}>{error}</p>}
             <div style={{ marginBottom: '1rem' }}>
                 <input type="file" accept=".glb,.gltf,.ply" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                <input type="text" placeholder="title" value={title} onChange={(e) => setTitle(e.target.value)} />
-                <input type="text" placeholder="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-                <button disabled={!file || loading} onClick={handleUpload}>Upload & Create Asset</button>
+                <input type="text" placeholder="タイトル" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <input type="text" placeholder="説明" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                <button disabled={!file || loading} onClick={handleUpload}>アップロードしてアセット作成</button>
             </div>
             <ul style={{ listStyle: 'none', padding: 0 }}>
                 {assets.map(a => (
                     <li key={a.id} style={{ marginBottom: '0.75rem', border: '1px solid #444', padding: '0.5rem' }}>
-                        <strong>{a.title || '(no title)'}</strong><br />
+                        <strong>{a.title || '(タイトルなし)'}</strong><br />
                         <small>{a.file_path}</small><br />
                         <small>{a.created_at}</small><br />
-                        <button onClick={() => handleDelete(a.id)}>Delete</button>
+                        <button onClick={() => handleDelete(a.id)}>削除</button>
                     </li>
                 ))}
             </ul>
