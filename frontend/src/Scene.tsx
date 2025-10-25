@@ -5,7 +5,10 @@ import { RulerTool } from './tools/RulerTool';
 // Vite: ?url でビルド後のパス文字列として取得
 
 
-export const Scene = ({ modelUrl }: { modelUrl?: string }) => {
+export const Scene = ({ modelUrl, modelPosition, modelRotation }: { modelUrl?: string; modelPosition: { x: number; y: number; z: number }; modelRotation?: { x: number; y: number; z: number } }) => {
+    // convert degrees to radians for three.js
+    const degToRad = (d: number) => (d * Math.PI) / 180;
+    const rot = modelRotation ? [degToRad(modelRotation.x), degToRad(modelRotation.y), degToRad(modelRotation.z)] as [number, number, number] : undefined;
     return (
         <>
             {/* Lighting */}
@@ -24,7 +27,11 @@ export const Scene = ({ modelUrl }: { modelUrl?: string }) => {
 
             {/* 3D Models / Future components */}
             <Suspense fallback={null}>
-                {modelUrl && <Model url={modelUrl} />}
+                {modelUrl && (
+                    <group position={[modelPosition.x, modelPosition.y, modelPosition.z]} rotation={rot}>
+                        <Model url={modelUrl} />
+                    </group>
+                )}
             </Suspense>
         </>
     );
