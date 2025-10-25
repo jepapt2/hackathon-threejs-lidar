@@ -15,23 +15,17 @@ interface ModelProps {
 
 export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = true }: ModelProps) => {
     const gltf = useLoader(GLTFLoader, url);
-    // clone scene and optionally shift all child positions by -bboxCenter so geometry is centered
-    const { scene, boxCenter, boxSize } = useMemo(() => {
+    // clone scene and compute bbox info; do not mutate scene here — we'll offset via an inner group
+    const { scene, boxCenter } = useMemo(() => {
         const s = gltf.scene.clone(true) as THREE.Object3D;
         s.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(s);
-        const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-        // apply offset to each object's local position so the visible geometry centers at origin
-        if (autoCenter) {
-            s.traverse((obj) => {
-                // only adjust objects with position property
-                if (obj.position) {
-                    obj.position.sub(center);
-                }
-            });
-        }
-        return { scene: s, boxCenter: autoCenter ? new THREE.Vector3(0, 0, 0) : center, boxSize: size };
+        const minY = box.min.y;
+        // boxCenter will be used to compute an inner-group position that recenters X/Z to the geometry center
+        // but places Y at the geometry bottom (minY) so the model's bottom rests at the parent origin
+        const bottomCenter = new THREE.Vector3(center.x, minY, center.z);
+        return { scene: s, boxCenter: autoCenter ? bottomCenter : center };
     }, [gltf, autoCenter]);
     const primRef = useRef<THREE.Object3D | null>(null);
     // also prepare individual child objects for manual expansion
@@ -74,12 +68,13 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
         }, 50);
     }, [debug]);
 
-    // lift the model so its bottom sits on the grid (y=0) when autoCenter is enabled
-    const liftY = boxSize ? (autoCenter ? boxSize.y / 2 : 0) : 0;
+    // previous implementation used liftY; when autoCenter is enabled we now position the inner group
+    // so that the geometry bottom aligns with the parent origin (y=0) by offsetting by boxCenter.y (which is bbox.min.y)
+    const liftY = 0;
     return (
         <group ref={groupRef} position={position}>
             {/* inner offset group: subtract bbox center so visible geometry is centered at parent origin */}
-            <group position={autoCenter ? [-boxCenter.x, -boxCenter.y + liftY, -boxCenter.z] : [0, liftY, 0]}>
+            <group position={autoCenter ? [-boxCenter.x, -boxCenter.y, -boxCenter.z] : [0, liftY, 0]}>
                 {childObjects.map((child, i) => (
                     <primitive key={child.uuid} object={child} ref={i === 0 ? (primRef as unknown as React.MutableRefObject<THREE.Object3D | null>) : undefined} />
                 ))}
