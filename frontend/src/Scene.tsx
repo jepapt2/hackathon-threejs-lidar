@@ -3,12 +3,9 @@ import { OrbitControls } from '@react-three/drei';
 import { Model } from './components/Model';
 import { RulerTool } from './tools/RulerTool';
 // Vite: ?url でビルド後のパス文字列として取得
-
-
-export const Scene = ({ modelUrl, modelPosition, modelRotation }: { modelUrl?: string; modelPosition: { x: number; y: number; z: number }; modelRotation?: { x: number; y: number; z: number } }) => {
+export const Scene = ({ models }: { models: Array<{ id: string; url: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }> }) => {
     // convert degrees to radians for three.js
     const degToRad = (d: number) => (d * Math.PI) / 180;
-    const rot = modelRotation ? [degToRad(modelRotation.x), degToRad(modelRotation.y), degToRad(modelRotation.z)] as [number, number, number] : undefined;
     return (
         <>
             {/* Lighting */}
@@ -27,11 +24,14 @@ export const Scene = ({ modelUrl, modelPosition, modelRotation }: { modelUrl?: s
 
             {/* 3D Models / Future components */}
             <Suspense fallback={null}>
-                {modelUrl && (
-                    <group position={[modelPosition.x, modelPosition.y, modelPosition.z]} rotation={rot}>
-                        <Model url={modelUrl} />
-                    </group>
-                )}
+                {models.map(m => {
+                    const rot = [degToRad(m.rotation.x), degToRad(m.rotation.y), degToRad(m.rotation.z)] as [number, number, number];
+                    return (
+                        <group key={m.id} position={[m.position.x, m.position.y, m.position.z]} rotation={rot}>
+                            <Model url={m.url} />
+                        </group>
+                    );
+                })}
             </Suspense>
         </>
     );
