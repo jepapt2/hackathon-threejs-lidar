@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RulerMenu from './RulerMenu';
 import ItemsDebug from './ItemsDebug';
 
@@ -17,6 +17,16 @@ export const ControlPanel: React.FC<{
     const [tab, setTab] = useState<'models' | 'ruler' | 'items'>('models');
 
     const sel = selectedModelId ? models.find(m => m.id === selectedModelId) : undefined;
+    // Local editable string state so users can type freely without values snapping to 0 while editing
+    const [posEdit, setPosEdit] = useState<{ x: string; y: string; z: string }>({ x: '0', y: '0', z: '0' });
+    const [rotEdit, setRotEdit] = useState<{ x: string; y: string; z: string }>({ x: '0', y: '0', z: '0' });
+
+    useEffect(() => {
+        if (sel) {
+            setPosEdit({ x: String(sel.position.x), y: String(sel.position.y), z: String(sel.position.z) });
+            setRotEdit({ x: String(sel.rotation.x), y: String(sel.rotation.y), z: String(sel.rotation.z) });
+        }
+    }, [sel]);
 
     return (
         <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 40 }}>
@@ -55,10 +65,21 @@ export const ControlPanel: React.FC<{
                                         {(['x', 'y', 'z'] as const).map(axis => (
                                             <div key={`pos-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, gap: 8 }}>
                                                 <label style={{ width: 18 }}>{axis.toUpperCase()}</label>
-                                                <input type='number' step={0.1} value={sel.position[axis]} style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '4px 6px' }} onChange={e => updateSelectedPosition({ [axis]: parseFloat(e.target.value) || 0 })} />
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                    <button style={{ fontSize: 12 }} onClick={() => updateSelectedPosition({ [axis]: +((sel.position[axis] + 0.5).toFixed(3)) })}>+0.5</button>
-                                                    <button style={{ fontSize: 12 }} onClick={() => updateSelectedPosition({ [axis]: +((sel.position[axis] - 0.5).toFixed(3)) })}>-0.5</button>
+                                                <input
+                                                    type='number'
+                                                    step={0.1}
+                                                    value={posEdit[axis]}
+                                                    style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '4px 6px' }}
+                                                    onChange={e => setPosEdit(prev => ({ ...prev, [axis]: e.target.value }))}
+                                                    onBlur={() => {
+                                                        const v = parseFloat(posEdit[axis]);
+                                                        updateSelectedPosition({ [axis]: Number.isFinite(v) ? v : 0 });
+                                                    }}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseFloat(posEdit[axis]); updateSelectedPosition({ [axis]: Number.isFinite(v) ? v : 0 }); } }}
+                                                />
+                                                <div style={{ display: 'flex', flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                                    <button style={{ fontSize: 12, padding: '4px 6px' }} onClick={() => { const v = +((sel.position[axis] + 0.5).toFixed(3)); updateSelectedPosition({ [axis]: v }); setPosEdit(prev => ({ ...prev, [axis]: String(v) })); }}>+0.5</button>
+                                                    <button style={{ fontSize: 12, padding: '4px 6px' }} onClick={() => { const v = +((sel.position[axis] - 0.5).toFixed(3)); updateSelectedPosition({ [axis]: v }); setPosEdit(prev => ({ ...prev, [axis]: String(v) })); }}>-0.5</button>
                                                 </div>
                                             </div>
                                         ))}
@@ -67,10 +88,21 @@ export const ControlPanel: React.FC<{
                                         {(['x', 'y', 'z'] as const).map(axis => (
                                             <div key={`rot-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 6, gap: 8 }}>
                                                 <label style={{ width: 18 }}>{axis.toUpperCase()}</label>
-                                                <input type='number' step={1} value={sel.rotation[axis]} style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '4px 6px' }} onChange={e => updateSelectedRotation({ [axis]: parseFloat(e.target.value) || 0 })} />
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                    <button style={{ fontSize: 12 }} onClick={() => updateSelectedRotation({ [axis]: +((sel.rotation[axis] + 5).toFixed(3)) })}>+5°</button>
-                                                    <button style={{ fontSize: 12 }} onClick={() => updateSelectedRotation({ [axis]: +((sel.rotation[axis] - 5).toFixed(3)) })}>-5°</button>
+                                                <input
+                                                    type='number'
+                                                    step={1}
+                                                    value={rotEdit[axis]}
+                                                    style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '4px 6px' }}
+                                                    onChange={e => setRotEdit(prev => ({ ...prev, [axis]: e.target.value }))}
+                                                    onBlur={() => {
+                                                        const v = parseFloat(rotEdit[axis]);
+                                                        updateSelectedRotation({ [axis]: Number.isFinite(v) ? v : 0 });
+                                                    }}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseFloat(rotEdit[axis]); updateSelectedRotation({ [axis]: Number.isFinite(v) ? v : 0 }); } }}
+                                                />
+                                                <div style={{ display: 'flex', flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                                    <button style={{ fontSize: 12, padding: '4px 6px' }} onClick={() => { const v = +((sel.rotation[axis] + 5).toFixed(3)); updateSelectedRotation({ [axis]: v }); setRotEdit(prev => ({ ...prev, [axis]: String(v) })); }}>+5°</button>
+                                                    <button style={{ fontSize: 12, padding: '4px 6px' }} onClick={() => { const v = +((sel.rotation[axis] - 5).toFixed(3)); updateSelectedRotation({ [axis]: v }); setRotEdit(prev => ({ ...prev, [axis]: String(v) })); }}>-5°</button>
                                                 </div>
                                             </div>
                                         ))}
