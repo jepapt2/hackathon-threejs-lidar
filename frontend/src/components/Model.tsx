@@ -1,6 +1,6 @@
 import { useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, } from 'react';
 import * as THREE from 'three';
 
 interface ModelProps {
@@ -33,10 +33,6 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
     const last = useRef<number>(0);
     const groupRef = useRef<THREE.Group | null>(null);
 
-    // initial mount log
-    if (debug) {
-        console.log('[Model] mounted for', url);
-    }
 
     useFrame(() => {
         if (!debug) return;
@@ -46,33 +42,16 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
         last.current = now;
         const wp = new THREE.Vector3();
         primRef.current.getWorldPosition(wp);
-        console.log('[Model] worldPos', wp.x.toFixed(3), wp.y.toFixed(3), wp.z.toFixed(3));
+
     });
 
-    useEffect(() => {
-        if (!debug) return;
-        // after mount, log structure details
-        setTimeout(() => {
-            try {
-                console.log('[Model] groupRef', !!groupRef.current, groupRef.current?.uuid);
-                console.log('[Model] primRef parent', primRef.current?.parent?.uuid, 'parent type', primRef.current?.parent?.type);
-                const children = primRef.current?.children || [];
-                console.log('[Model] prim children count', children.length);
-                children.forEach((c, i) => {
-                    const lp = c.position;
-                    console.log(`[Model] child[${i}] name=${c.name || '<noname>'} type=${c.type} pos=${lp.x.toFixed(3)},${lp.y.toFixed(3)},${lp.z.toFixed(3)}`);
-                });
-            } catch (e) {
-                console.log('[Model] inspect error', e);
-            }
-        }, 50);
-    }, [debug]);
+
 
     // previous implementation used liftY; when autoCenter is enabled we now position the inner group
     // so that the geometry bottom aligns with the parent origin (y=0) by offsetting by boxCenter.y (which is bbox.min.y)
     const liftY = 0;
     return (
-        <group ref={groupRef} position={position}>
+        <group ref={groupRef} position={position} onClick={(event) => console.log(`レイヤーx${event.layerX}, レイヤーy${event.layerY}`)}>
             {/* inner offset group: subtract bbox center so visible geometry is centered at parent origin */}
             <group position={autoCenter ? [-boxCenter.x, -boxCenter.y, -boxCenter.z] : [0, liftY, 0]}>
                 {childObjects.map((child, i) => (

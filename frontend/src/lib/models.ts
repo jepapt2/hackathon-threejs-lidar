@@ -13,7 +13,6 @@ export type Item = {
 
 export async function listItems(): Promise<Item[]> {
     const { data, error } = await supabase.from('models').select('*')
-    console.log('listItems data:', data, error);
     if (error) throw error;
     return (data ?? []) as Item[];
 }
