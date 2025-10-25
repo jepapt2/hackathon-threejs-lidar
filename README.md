@@ -1,4 +1,7 @@
-# ハッカソン　threejs-lidar
+# lidarスキャンした空間データをweb上にthreejsで表示
+
+<!-- プロジェクトのスクリーンショット（画像ファイルを `frontend/public/screenshot.png` に置くと表示されます） -->
+![アプリのスクリーンショット](frontend/public/readme.png)
 
 ## 目的
 
