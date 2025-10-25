@@ -1,9 +1,8 @@
 import { Canvas } from '@react-three/fiber';
 import { Scene } from './Scene';
-import ItemsDebug from './components/ItemsDebug';
+import ControlPanel from './components/ControlPanel';
 import { useState } from 'react';
 import { RulerProvider } from './tools/RulerProvider';
-import RulerMenu from './components/RulerMenu';
 
 export default function App() {
   // multiple models state
@@ -40,62 +39,16 @@ export default function App() {
         <Canvas shadows camera={{ fov: 55, position: [0, 2, 4] }} gl={{ antialias: true }}>
           <Scene models={models} />
         </Canvas>
-        {/* 簡易位置コントロール */}
-        {/* Left panel: loaded models + editor for selected model */}
-        <div style={{ position: 'absolute', top: 160, left: 0, background: '#202225', color: '#eee', padding: '8px 10px', fontSize: 12, width: 240, borderTop: '1px solid #333', borderRight: '1px solid #333' }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Loaded Models</div>
-          <div style={{ maxHeight: 260, overflowY: 'auto', marginBottom: 8 }}>
-            {models.length === 0 && <div style={{ color: '#888' }}>No models loaded</div>}
-            {models.map(m => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid #2b2b2b' }}>
-                <button style={{ flex: 1, textAlign: 'left', background: selectedModelId === m.id ? '#2a6' : 'transparent', color: '#eee', border: 'none', padding: '4px' }} onClick={() => setSelectedModelId(m.id)}>{m.name || m.id}</button>
-                <button title='Delete' onClick={() => removeModel(m.id)} style={{ background: 'transparent', color: '#f66', border: 'none' }}>✕</button>
-              </div>
-            ))}
-          </div>
 
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Selected Model</div>
-          {!selectedModelId && <div style={{ color: '#888', marginBottom: 8 }}>— none —</div>}
-          {selectedModelId && (() => {
-            const sel = models.find(m => m.id === selectedModelId)!;
-            return (
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{sel.name}</div>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Position</div>
-                {(['x', 'y', 'z'] as const).map(axis => (
-                  <div key={`pos-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 4, gap: 6 }}>
-                    <label style={{ width: 14 }}>{axis.toUpperCase()}</label>
-                    <input type='number' step={0.1} value={sel.position[axis]} style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '2px 6px' }} onChange={e => updateSelectedPosition({ [axis]: parseFloat(e.target.value) || 0 })} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <button style={{ fontSize: 11 }} onClick={() => updateSelectedPosition({ [axis]: +((sel.position[axis] + 0.5).toFixed(3)) })}>+0.5</button>
-                      <button style={{ fontSize: 11 }} onClick={() => updateSelectedPosition({ [axis]: +((sel.position[axis] - 0.5).toFixed(3)) })}>-0.5</button>
-                    </div>
-                  </div>
-                ))}
-
-                <div style={{ fontWeight: 600, marginTop: 8, marginBottom: 6 }}>Rotation (deg)</div>
-                {(['x', 'y', 'z'] as const).map(axis => (
-                  <div key={`rot-${axis}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 4, gap: 6 }}>
-                    <label style={{ width: 14 }}>{axis.toUpperCase()}</label>
-                    <input type='number' step={1} value={sel.rotation[axis]} style={{ flex: 1, background: '#111', color: '#eee', border: '1px solid #444', padding: '2px 6px' }} onChange={e => updateSelectedRotation({ [axis]: parseFloat(e.target.value) || 0 })} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <button style={{ fontSize: 11 }} onClick={() => updateSelectedRotation({ [axis]: +((sel.rotation[axis] + 5).toFixed(3)) })}>+5°</button>
-                      <button style={{ fontSize: 11 }} onClick={() => updateSelectedRotation({ [axis]: +((sel.rotation[axis] - 5).toFixed(3)) })}>-5°</button>
-                    </div>
-                  </div>
-                ))}
-
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  <button style={{ flex: 1 }} onClick={() => { updateSelectedPosition({ x: 0, y: 0, z: 0 }); updateSelectedRotation({ x: 0, y: 0, z: 0 }); }}>Reset</button>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-        {/* 左側: Ruler Menu */}
-        <RulerMenu />
-        {/* 右側: Items Debug */}
-        <ItemsDebug onSelect={(item) => { const it = item as { url?: string; name?: string }; if (it.url) addModel(it.url, it.name); }} />
+        <ControlPanel
+          models={models}
+          selectedModelId={selectedModelId}
+          setSelectedModelId={setSelectedModelId}
+          updateSelectedPosition={updateSelectedPosition}
+          updateSelectedRotation={updateSelectedRotation}
+          removeModel={removeModel}
+          addModel={addModel}
+        />
       </div>
     </RulerProvider>
   );

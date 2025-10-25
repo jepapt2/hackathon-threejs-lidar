@@ -3,7 +3,7 @@ import { listItems, deleteItem, createItem } from '../lib/models';
 import type { Item } from '../lib/models';
 
 
-export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void }> = ({ onSelect }) => {
+export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void; inline?: boolean }> = ({ onSelect, inline = false }) => {
     const [items, setItems] = useState<Item[]>([]);
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
@@ -54,8 +54,12 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void }> = ({ onSe
     const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
     const ACCEPT = '.glb,.gltf,model/gltf-binary,application/octet-stream'; // 拡張
 
+    const containerStyle: React.CSSProperties = inline
+        ? { width: '100%', background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem', borderRadius: 6 }
+        : { position: 'absolute', top: 0, right: 0, width: 280, background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem' };
+
     return (
-        <div style={{ position: 'absolute', top: 0, right: 0, width: 280, background: '#1d1d1d', color: '#eee', fontSize: 12, fontFamily: 'sans-serif', padding: '0.75rem' }}>
+        <div style={containerStyle}>
             <h3 style={{ marginTop: 0 }}>Items Debug</h3>
             {loading && <p>Loading...</p>}
             {error && <p style={{ color: 'tomato' }}>{error}</p>}

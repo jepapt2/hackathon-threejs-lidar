@@ -16,8 +16,8 @@ export const Scene = ({ models }: { models: Array<{ id: string; url: string; pos
             <OrbitControls makeDefault enableDamping dampingFactor={0.12} />
 
             {/* Helpers (開発中のみ) */}
-            <gridHelper args={[10, 10]} />
-            <axesHelper args={[1]} />
+            <gridHelper args={[10, 10]} position={[0, 0, 0]} />
+            <axesHelper args={[1]} position={[0, 0, 0]} />
 
             {/* Measurement Tool */}
             <RulerTool />
