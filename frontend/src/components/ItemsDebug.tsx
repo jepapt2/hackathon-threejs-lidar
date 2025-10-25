@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listItems, deleteItem, createItem } from '../lib/models';
+import { listItems, createItem } from '../lib/models';
 import type { Item } from '../lib/models';
 
 
@@ -41,15 +41,15 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void; inline?: bo
         }
     }
 
-    async function handleDelete(id: string) {
-        try {
-            await deleteItem(id);
-            setItems(prev => prev.filter(i => i.id !== id));
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            setError(msg);
-        }
-    }
+    // async function handleDelete(id: string) {
+    //     try {
+    //         await deleteItem(id);
+    //         setItems(prev => prev.filter(i => i.id !== id));
+    //     } catch (e: unknown) {
+    //         const msg = e instanceof Error ? e.message : String(e);
+    //         setError(msg);
+    //     }
+    // }
 
     const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
     const ACCEPT = '.glb,.gltf,model/gltf-binary,application/octet-stream'; // 拡張
@@ -103,14 +103,14 @@ export const ItemsDebug: React.FC<{ onSelect?: (item: Item) => void; inline?: bo
                                 e.stopPropagation();
                                 if (i.url) onSelect?.(i);
                             }}>配置</button>
-                            <button style={{ color: '#f66', backgroundColor: 'transparent' }} onClick={(e) => {
+                            {/* <button style={{ color: '#f66', backgroundColor: 'transparent' }} onClick={(e) => {
                                 e.stopPropagation();
                                 if (confirm(
                                     `${i.name} を削除してもよろしいですか？`
                                 )) {
                                     handleDelete(i.id);
                                 }
-                            }}>削除</button>
+                            }}>削除</button> */}
                         </div>
                     </li>
                 ))}
