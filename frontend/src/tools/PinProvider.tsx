@@ -24,8 +24,9 @@ export const PinProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearPins = useCallback(() => setPins([]), []);
 
+  const setAllPins = useCallback((next: PinData[]) => setPins(next), []);
   return (
-    <PinContext.Provider value={{ pins, active, toggleActive, addPin, updateComment, removePin, clearPins }}>
+    <PinContext.Provider value={{ pins, active, toggleActive, addPin, updateComment, removePin, clearPins, setAllPins }}>
       {children}
     </PinContext.Provider>
   );

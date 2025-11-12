@@ -34,6 +34,10 @@ export default function App() {
     setModels(ms => ms.filter(m => m.id !== id));
     setSelectedModelId(sid => (sid === id ? undefined : sid));
   };
+  const replaceAllModels = (next: typeof models) => {
+    setModels(next);
+    setSelectedModelId(next[0]?.id);
+  };
   return (
     <RulerProvider>
       <PinProvider>
@@ -50,6 +54,7 @@ export default function App() {
           updateSelectedRotation={updateSelectedRotation}
           removeModel={removeModel}
           addModel={addModel}
+          replaceAllModels={replaceAllModels}
         />
       </div>
       </PinProvider>

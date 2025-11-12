@@ -16,6 +16,7 @@ export interface PinContextValue {
   updateComment: (id: string, comment: string) => void;
   removePin: (id: string) => void;
   clearPins: () => void;
+  setAllPins: (pins: PinData[]) => void;
 }
 
 export const PinContext = createContext<PinContextValue | undefined>(undefined);
