@@ -1,22 +1,20 @@
 import { useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { useMemo, useRef, } from 'react';
+import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 interface ModelProps {
     url: string;
-    /** optional position applied to a wrapper group to ensure transforms propagate */
     position?: [number, number, number];
-    /** debug: log world position to console */
     debug?: boolean;
-    /** auto center geometry to origin by subtracting bbox center */
     autoCenter?: boolean;
+    selected?: boolean; // highlight flag
 }
 
-export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = true }: ModelProps) => {
+export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = true, selected = false }: ModelProps) => {
     const gltf = useLoader(GLTFLoader, url);
     // clone scene and compute bbox info; do not mutate scene here — we'll offset via an inner group
-    const { scene, boxCenter } = useMemo(() => {
+    const { scene, boxCenter, bbox } = useMemo(() => {
         const s = gltf.scene.clone(true) as THREE.Object3D;
         s.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(s);
@@ -24,9 +22,9 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
         const minY = box.min.y;
         // boxCenter will be used to compute an inner-group position that recenters X/Z to the geometry center
         // but places Y at the geometry bottom (minY) so the model's bottom rests at the parent origin
-        const bottomCenter = new THREE.Vector3(center.x, minY, center.z);
-        return { scene: s, boxCenter: autoCenter ? bottomCenter : center };
-    }, [gltf, autoCenter]);
+      const bottomCenter = new THREE.Vector3(center.x, minY, center.z);
+      return { scene: s, boxCenter: autoCenter ? bottomCenter : center, bbox: box };
+  }, [gltf, autoCenter]);
     const primRef = useRef<THREE.Object3D | null>(null);
     // also prepare individual child objects for manual expansion
     const childObjects = useMemo(() => scene.children.map(c => c), [scene]);
@@ -42,7 +40,6 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
         last.current = now;
         const wp = new THREE.Vector3();
         primRef.current.getWorldPosition(wp);
-
     });
 
 
@@ -52,8 +49,37 @@ export const Model = ({ url, position = [0, 0, 0], debug = true, autoCenter = tr
     const liftY = 0;
     return (
         <group ref={groupRef} position={position} onClick={(event) => console.log(`レイヤーx${event.layerX}, レイヤーy${event.layerY}`)}>
-            {/* inner offset group: subtract bbox center so visible geometry is centered at parent origin */}
             <group position={autoCenter ? [-boxCenter.x, -boxCenter.y, -boxCenter.z] : [0, liftY, 0]}>
+                {selected && (
+                    <lineSegments>
+                        <bufferGeometry>
+                            <bufferAttribute
+                                attach="attributes-position"
+                                itemSize={3}
+                                count={24}
+                                array={new Float32Array((() => {
+                                    const min = bbox.min; const max = bbox.max;
+                                    const x1=min.x, y1=min.y, z1=min.z; const x2=max.x, y2=max.y, z2=max.z;
+                                    return [
+                                        x1,y1,z1, x2,y1,z1,
+                                        x2,y1,z1, x2,y1,z2,
+                                        x2,y1,z2, x1,y1,z2,
+                                        x1,y1,z2, x1,y1,z1,
+                                        x1,y2,z1, x2,y2,z1,
+                                        x2,y2,z1, x2,y2,z2,
+                                        x2,y2,z2, x1,y2,z2,
+                                        x1,y2,z2, x1,y2,z1,
+                                        x1,y1,z1, x1,y2,z1,
+                                        x2,y1,z1, x2,y2,z1,
+                                        x2,y1,z2, x2,y2,z2,
+                                        x1,y1,z2, x1,y2,z2,
+                                    ];
+                                })())}
+                            />
+                        </bufferGeometry>
+                        {/* <lineBasicMaterial color="none" depthTest={false} /> */}
+                    </lineSegments>
+                )}
                 {childObjects.map((child, i) => (
                     <primitive key={child.uuid} object={child} ref={i === 0 ? (primRef as unknown as React.MutableRefObject<THREE.Object3D | null>) : undefined} />
                 ))}

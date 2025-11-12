@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePins from '../tools/usePins';
 import RulerMenu from './RulerMenu';
 import ItemsDebug from './ItemsDebug';
 
@@ -14,7 +15,7 @@ export const ControlPanel: React.FC<{
     addModel: (url: string, name?: string) => void;
 }> = ({ models, selectedModelId, setSelectedModelId, updateSelectedPosition, updateSelectedRotation, removeModel, addModel }) => {
     const [open, setOpen] = useState(false);
-    const [tab, setTab] = useState<'models' | 'ruler' | 'items'>('models');
+    const [tab, setTab] = useState<'models' | 'ruler' | 'items' | 'pins'>('models');
 
     const sel = selectedModelId ? models.find(m => m.id === selectedModelId) : undefined;
     // Local editable string state so users can type freely without values snapping to 0 while editing
@@ -28,6 +29,45 @@ export const ControlPanel: React.FC<{
         }
     }, [sel]);
 
+    // Pins panel component defined inline for simplicity
+    const PinsPanel: React.FC = () => {
+        const { pins, active, toggleActive, removePin, updateComment, clearPins } = usePins();
+        return (
+            <div>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>ピン</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <button style={{ flex: 1 }} onClick={toggleActive}>{active ? '配置モード終了' : '配置モード開始'}</button>
+                    <button style={{ flex: 1 }} onClick={clearPins} disabled={pins.length === 0}>全削除</button>
+                </div>
+                <div style={{ marginBottom: 8, background: '#1d1f22', padding: '6px 8px', borderRadius: 4, fontSize: 12 }}>
+                    モード: <strong style={{ color: active ? '#4ecc8c' : '#ccc' }}>{active ? '配置中 (クリックで追加)' : '待機'}</strong><br />
+                    合計ピン: {pins.length}
+                </div>
+                {pins.length === 0 && <div style={{ color: '#777', fontSize: 12 }}>ピンはまだありません。配置モード開始後にモデル上をクリックしてください。</div>}
+                {pins.length > 0 && (
+                    <div style={{ maxHeight: 180, overflowY: 'auto', borderTop: '1px solid #222', paddingTop: 6 }}>
+                        {pins.map(p => (
+                            <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '6px 0', borderBottom: '1px solid #222' }}>
+                                <div style={{ fontSize: 11, wordBreak: 'break-word' }}>{p.comment || '(コメントなし)'}</div>
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                    <button style={{ flex: 1, fontSize: 11 }} onClick={() => {
+                                        const next = window.prompt('コメントを編集', p.comment) ?? p.comment;
+                                        updateComment(p.id, next);
+                                    }}>編集</button>
+                                    <button style={{ flex: 1, fontSize: 11, color: '#f88' }} onClick={() => removePin(p.id)}>削除</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <p style={{ marginTop: 10, fontSize: 11, lineHeight: 1.5, opacity: 0.75 }}>
+                    配置モードを開始するとシーンを左クリックした位置にピンを追加します。<br />
+                    追加時にコメント入力ダイアログが表示され、後から編集できます。
+                </p>
+            </div>
+        );
+    };
+
     return (
         <div style={{ position: 'absolute', left: 12, top: 12, zIndex: 40 }}>
             {/* top menu buttons always visible; clicking opens the lower panel with selected tab */}
@@ -35,6 +75,7 @@ export const ControlPanel: React.FC<{
                 <button onClick={() => { setTab('models'); setOpen(true); }} title='編集' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'models' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>編集</button>
                 <button onClick={() => { setTab('ruler'); setOpen(true); }} title='定規' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'ruler' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>定規</button>
                 <button onClick={() => { setTab('items'); setOpen(true); }} title='モデル' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'items' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>配置</button>
+                <button onClick={() => { setTab('pins'); setOpen(true); }} title='ピン' style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'pins' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>ピン</button>
                 <button onClick={() => setOpen(false)} style={{ borderRadius: 6, background: '#222', color: '#fff', border: 'none' }}>×</button>
             </div>
 
@@ -126,6 +167,7 @@ export const ControlPanel: React.FC<{
                                 <ItemsDebug onSelect={(it) => { if (it.url) addModel(it.url, it.name); }} inline />
                             </div>
                         )}
+                        {tab === 'pins' && <PinsPanel />}
                     </div>
                 </div>
             )}

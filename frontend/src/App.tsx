@@ -3,6 +3,7 @@ import { Scene } from './Scene';
 import ControlPanel from './components/ControlPanel';
 import { useState } from 'react';
 import { RulerProvider } from './tools/RulerProvider';
+import { PinProvider } from './tools/PinProvider';
 
 export default function App() {
   // multiple models state
@@ -35,9 +36,10 @@ export default function App() {
   };
   return (
     <RulerProvider>
+      <PinProvider>
       <div style={{ width: '100vw', height: '100vh', background: '#111', position: 'relative' }}>
         <Canvas shadows camera={{ fov: 55, position: [0, 2, 4] }} gl={{ antialias: true }}>
-          <Scene models={models} />
+          <Scene models={models} selectedModelId={selectedModelId} />
         </Canvas>
 
         <ControlPanel
@@ -50,6 +52,7 @@ export default function App() {
           addModel={addModel}
         />
       </div>
+      </PinProvider>
     </RulerProvider>
   );
 }
