@@ -34,7 +34,8 @@ export const PinTool: React.FC<{ currentModelId?: string }> = ({ currentModelId 
     ev.preventDefault();
     try { (ev.target as Element).releasePointerCapture?.(ev.pointerId); } catch { /* ignore */ }
     tmp.current.copy(valid.point);
-    const comment = window.prompt('コメントを入力 (空で追加可能)', '') || '';
+    const comment = window.prompt('コメントを入力', '');
+    if (comment === null) return;
     addPin(tmp.current, currentModelId, comment);
   }, [active, gl, camera, scene, addPin, currentModelId]);
 

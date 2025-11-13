@@ -92,7 +92,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       const { error: pinErr } = await supabase.from('scene_pins').insert(pinPayload);
       if (pinErr) { alert('ピン保存失敗: ' + pinErr.message); return; }
     }
-    alert('保存完了 (ID上書き)');
+    alert('保存完了');
   };
 
   return (
