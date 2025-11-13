@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import * as THREE from 'three';
 import { supabase } from '../lib/supabaseClient';
 import usePins from '../tools/usePins';
 import RulerMenu from './RulerMenu';
@@ -22,22 +21,9 @@ interface ControlPanelProps {
   removeModel: (id: string) => void;
   addModel: (url: string, name?: string) => void;
   replaceAllModels?: (next: Model[]) => void;
+  sceneId?: string; // route提供のUUID
 }
 
-interface SceneModelRow {
-  id: string;
-  name?: string;
-  source_url: string;
-  position_x: number; position_y: number; position_z: number;
-  rotation_x: number; rotation_y: number; rotation_z: number;
-}
-
-interface ScenePinRow {
-  id: string;
-  scene_model_id?: string | null;
-  comment?: string | null;
-  world_x: number; world_y: number; world_z: number;
-}
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   models,
@@ -47,12 +33,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   updateSelectedRotation,
   removeModel,
   addModel,
-  replaceAllModels
+  // replaceAllModels (scene load removed for ID-based overwrite)
+  sceneId
 }) => {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<'models' | 'ruler' | 'items' | 'pins' | 'scenes'>('models');
-  const [currentSceneName, setCurrentSceneName] = useState('default');
-  const [scenes, setScenes] = useState<Array<{ id: string; name: string }>>([]);
+  const [tab, setTab] = useState<'models' | 'ruler' | 'items' | 'pins'>('models');
   const sel = selectedModelId ? models.find(m => m.id === selectedModelId) : undefined;
 
   const [posEdit, setPosEdit] = useState<{ x: string; y: string; z: string }>({ x: '0', y: '0', z: '0' });
@@ -67,25 +52,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   // Pins
   const pinsCtx = usePins();
-  const { pins, active, toggleActive, removePin, updateComment, clearPins, setAllPins } = pinsCtx;
+  const { pins, active, toggleActive, removePin, updateComment, clearPins } = pinsCtx;
 
-  const refreshScenes = async () => {
-    const { data, error } = await supabase.from('scenes').select('id,name').order('created_at', { ascending: false });
-    if (!error && data) setScenes(data as Array<{id:string;name:string}>);
-  };
-  useEffect(() => { if (open && tab === 'scenes') refreshScenes(); }, [open, tab]);
-
-  const saveScene = async () => {
-    const sceneName = currentSceneName.trim() || 'default';
-    const { data: sceneRows, error: sceneErr } = await supabase.from('scenes').select('id').eq('name', sceneName).limit(1);
+  const saveById = async () => {
+    if (!sceneId) { alert('シーンIDがありません'); return; }
+    // 存在確認
+    const { data: sceneRows, error: sceneErr } = await supabase.from('scenes').select('id').eq('id', sceneId).limit(1);
     if (sceneErr) { alert('シーン取得失敗: ' + sceneErr.message); return; }
-    let sceneId: string | undefined = sceneRows?.[0]?.id as string | undefined;
-    if (!sceneId) {
-      const { data: inserted, error: insErr } = await supabase.from('scenes').insert({ name: sceneName }).select('id').limit(1);
-      if (insErr || !inserted || inserted.length === 0) { alert('シーン作成失敗'); return; }
-      sceneId = inserted[0].id as string;
-    }
-    // purge existing
+    if (!sceneRows || sceneRows.length === 0) { alert('シーンが存在しません'); return; }
+    // purge
     await supabase.from('scene_models').delete().eq('scene_id', sceneId);
     await supabase.from('scene_pins').delete().eq('scene_id', sceneId);
     // insert models
@@ -101,10 +76,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       rotation_z: m.rotation.z,
       scale_x: 1, scale_y: 1, scale_z: 1, order_index: 0
     }));
-  const { data: insertedModels, error: modErr } = await supabase.from('scene_models').insert(modelPayload).select('id');
+    const { data: insertedModels, error: modErr } = await supabase.from('scene_models').insert(modelPayload).select('id');
     if (modErr) { alert('モデル保存失敗: ' + modErr.message); return; }
-  const idMap: Record<string,string> = {};
-  (insertedModels||[]).forEach((row: { id: string }, idx:number) => { idMap[models[idx].id] = row.id; });
+    const idMap: Record<string, string> = {};
+    (insertedModels || []).forEach((row: { id: string }, idx: number) => { idMap[models[idx].id] = row.id; });
     if (pins.length) {
       const pinPayload = pins.map(p => ({
         scene_id: sceneId,
@@ -117,38 +92,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       const { error: pinErr } = await supabase.from('scene_pins').insert(pinPayload);
       if (pinErr) { alert('ピン保存失敗: ' + pinErr.message); return; }
     }
-    await refreshScenes();
-    alert('シーン保存完了');
-  };
-
-  const loadScene = async (nameOverride?: string) => {
-    const sceneName = (nameOverride || currentSceneName || 'default').trim();
-    const { data: sceneRows, error: sceneErr } = await supabase.from('scenes').select('id').eq('name', sceneName).limit(1);
-    if (sceneErr || !sceneRows || sceneRows.length === 0) { alert('シーンがありません'); return; }
-    const sceneId = sceneRows[0].id as string;
-  const { data: modelRows, error: mErr } = await supabase.from('scene_models').select('*').eq('scene_id', sceneId);
-    if (mErr) { alert('モデル取得失敗'); return; }
-    const { data: pinRows, error: pErr } = await supabase.from('scene_pins').select('*').eq('scene_id', sceneId);
-    if (pErr) { alert('ピン取得失敗'); return; }
-    if (replaceAllModels) {
-      const loadedModels: Model[] = (modelRows as SceneModelRow[] | null || []).map(r => ({
-        id: r.id,
-        name: r.name || undefined,
-        url: r.source_url,
-        position: { x: r.position_x, y: r.position_y, z: r.position_z },
-        rotation: { x: r.rotation_x, y: r.rotation_y, z: r.rotation_z }
-      }));
-      replaceAllModels(loadedModels);
-      setSelectedModelId(loadedModels[0]?.id);
-    }
-    const nextPins = (pinRows as ScenePinRow[] | null || []).map(r => ({
-      id: r.id,
-      position: new THREE.Vector3(r.world_x, r.world_y, r.world_z),
-      comment: r.comment || '',
-      modelId: r.scene_model_id || undefined
-    }));
-    setAllPins(nextPins);
-    alert('読み込み完了: モデル ' + (modelRows?.length || 0) + ' / ピン ' + (pinRows?.length || 0) + ' 件');
+    alert('保存完了 (ID上書き)');
   };
 
   return (
@@ -158,7 +102,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         <button onClick={() => { setTab('ruler'); setOpen(true); }} style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'ruler' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>定規</button>
         <button onClick={() => { setTab('items'); setOpen(true); }} style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'items' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>配置</button>
   <button onClick={() => { setTab('pins'); setOpen(true); }} style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'pins' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>ピン</button>
-  <button onClick={() => { setTab('scenes'); setOpen(true); }} style={{ padding: '8px 10px', borderRadius: 6, background: tab === 'scenes' && open ? '#2a6' : '#222', color: '#fff', border: '1px solid #333' }}>シーン</button>
+  {/* シーン管理タブはIDルート統合により削除 */}
         {open && <button onClick={() => setOpen(false)} style={{ padding: '8px 10px', borderRadius: 6, background: '#222', color: '#fff', border: '1px solid #333' }}>×</button>}
       </div>
       {open && (
@@ -177,8 +121,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  <button style={{ flex: 1 }} onClick={saveScene}>シーン保存</button>
-                  <button style={{ flex: 1 }} onClick={() => loadScene()}>シーン読込</button>
+                  <button style={{ flex: 1 }} onClick={saveById} disabled={!sceneId}>上書き保存{sceneId ? '' : ' (シーンIDなし)'}</button>
                 </div>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>選択中のモデル</div>
                 {!sel && <div style={{ color: '#888', marginBottom: 8 }}>— 未選択 —</div>}
@@ -275,30 +218,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </p>
               </div>
             )}
-            {tab === 'scenes' && (
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 8 }}>シーン一覧</div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                  <input value={currentSceneName} onChange={e => setCurrentSceneName(e.target.value)} placeholder='シーン名' style={{ flex: 1, background: '#111', border: '1px solid #333', color: '#eee', padding: '4px 6px' }} />
-                  <button onClick={saveScene}>保存</button>
-                  <button onClick={() => loadScene()}>読込</button>
-                </div>
-                <div style={{ marginBottom: 8, display: 'flex', gap: 6 }}>
-                  <button style={{ flex: 1 }} onClick={refreshScenes}>再読込</button>
-                  <button style={{ flex: 1 }} onClick={async () => { const name = prompt('新しいシーン名', currentSceneName) || ''; if (!name.trim()) return; const { error } = await supabase.from('scenes').insert({ name: name.trim() }); if (error) { alert('作成失敗: '+error.message); } else { setCurrentSceneName(name.trim()); refreshScenes(); } }}>新規作成</button>
-                </div>
-                <div style={{ maxHeight: 200, overflowY: 'auto', borderTop: '1px solid #222', paddingTop: 6 }}>
-                  {scenes.length === 0 && <div style={{ color: '#777', fontSize: 12 }}>シーンなし</div>}
-                  {scenes.map(s => (
-                    <div key={s.id} style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #222' }}>
-                      <button style={{ flex: 1, textAlign: 'left', background: s.name === currentSceneName ? '#2a6' : '#222', color: '#fff', border: '1px solid #333', padding: '4px 6px', borderRadius: 4 }} onClick={() => { setCurrentSceneName(s.name); loadScene(s.name); }}>読込: {s.name}</button>
-                      <button style={{ fontSize: 11, color: '#f88', background: '#222', border: '1px solid #333', padding: '4px 6px', borderRadius: 4 }} onClick={async () => { if (!confirm('削除しますか?')) return; await supabase.from('scene_pins').delete().eq('scene_id', s.id); await supabase.from('scene_models').delete().eq('scene_id', s.id); const { error } = await supabase.from('scenes').delete().eq('id', s.id); if (error) { alert('削除失敗: '+error.message); } refreshScenes(); }}>削除</button>
-                    </div>
-                  ))}
-                </div>
-                <p style={{ marginTop: 10, fontSize: 11, lineHeight: 1.5, opacity: 0.7 }}>保存は現在のモデル/ピンを指定シーン名に上書きします。ピンのモデル参照は保存時に新規UUIDへ再マッピングされます。</p>
-              </div>
-            )}
+
           </div>
         </div>
       )}

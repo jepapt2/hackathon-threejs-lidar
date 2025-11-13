@@ -15,7 +15,7 @@ interface AppProps {
   initialPins?: PinInit[];
 }
 
-export default function App({ initialModels, initialPins }: AppProps) {
+export default function App({ sceneId, initialModels, initialPins }: AppProps) {
   // multiple models state
   const [models, setModels] = useState<ModelData[]>(initialModels || []);
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>(initialModels && initialModels[0]?.id);
@@ -72,6 +72,7 @@ export default function App({ initialModels, initialPins }: AppProps) {
           removeModel={removeModel}
           addModel={addModel}
           replaceAllModels={replaceAllModels}
+          sceneId={sceneId}
         />
       </div>
       </PinProvider>

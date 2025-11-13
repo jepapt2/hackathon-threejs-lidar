@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import App from '../App';
 import type { ModelData, PinInit } from '../App';
 import { supabase } from '../lib/supabaseClient';
@@ -7,6 +7,7 @@ import * as THREE from 'three';
 
 export default function SceneWrapper() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const sceneId = id || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
@@ -58,7 +59,10 @@ export default function SceneWrapper() {
 
   return (
     <>
-      <App initialModels={initialModels} initialPins={initialPins} />
+      <App sceneId={sceneId} initialModels={initialModels} initialPins={initialPins} />
+      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 100 }}>
+        <button onClick={() => navigate('/')} style={{ padding: '6px 10px', fontSize: 12 }}>一覧へ戻る</button>
+      </div>
       <div style={{ position: 'absolute', right: 8, bottom: 8, color: '#ccc', fontSize: 12, pointerEvents: 'none' }}>sceneId: {sceneId}</div>
     </>
   );
