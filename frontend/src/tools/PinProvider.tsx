@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { PinContext } from './PinContext';
 import type { PinData } from './PinContext';
 
-export const PinProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [pins, setPins] = useState<PinData[]>([]);
+export interface PinProviderProps { children: React.ReactNode; initialPins?: PinData[] }
+
+export const PinProvider: React.FC<PinProviderProps> = ({ children, initialPins }) => {
+  const [pins, setPins] = useState<PinData[]>(initialPins || []);
   const [active, setActive] = useState(false);
 
   const toggleActive = useCallback(() => setActive(a => !a), []);
@@ -25,6 +27,13 @@ export const PinProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearPins = useCallback(() => setPins([]), []);
 
   const setAllPins = useCallback((next: PinData[]) => setPins(next), []);
+
+  // 初期ピンが後から渡されるケース(非同期ロード)にも対応
+  useEffect(() => {
+    if (initialPins && initialPins.length && pins.length === 0) {
+      setPins(initialPins);
+    }
+  }, [initialPins, pins.length]);
   return (
     <PinContext.Provider value={{ pins, active, toggleActive, addPin, updateComment, removePin, clearPins, setAllPins }}>
       {children}

@@ -1,14 +1,31 @@
 import { Canvas } from '@react-three/fiber';
 import { Scene } from './Scene';
 import ControlPanel from './components/ControlPanel';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RulerProvider } from './tools/RulerProvider';
 import { PinProvider } from './tools/PinProvider';
 
-export default function App() {
+export interface ModelData { id: string; name?: string; url: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }
+import type * as THREE from 'three';
+export interface PinInit { id: string; position: THREE.Vector3; comment: string; modelId?: string }
+
+interface AppProps {
+  sceneId?: string;
+  initialModels?: ModelData[];
+  initialPins?: PinInit[];
+}
+
+export default function App({ initialModels, initialPins }: AppProps) {
   // multiple models state
-  const [models, setModels] = useState<Array<{ id: string; name?: string; url: string; position: { x: number; y: number; z: number }; rotation: { x: number; y: number; z: number } }>>([]);
-  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(undefined);
+  const [models, setModels] = useState<ModelData[]>(initialModels || []);
+  const [selectedModelId, setSelectedModelId] = useState<string | undefined>(initialModels && initialModels[0]?.id);
+
+  useEffect(() => {
+    if (initialModels && initialModels.length) {
+      setModels(initialModels);
+      setSelectedModelId(initialModels[0]?.id);
+    }
+  }, [initialModels]);
 
   // helpers to operate on the selected model
   const addModel = (url: string, name?: string) => {
@@ -40,7 +57,7 @@ export default function App() {
   };
   return (
     <RulerProvider>
-      <PinProvider>
+      <PinProvider initialPins={initialPins}>
       <div style={{ width: '100vw', height: '100vh', background: '#111', position: 'relative' }}>
         <Canvas shadows camera={{ fov: 55, position: [0, 2, 4] }} gl={{ antialias: true }}>
           <Scene models={models} selectedModelId={selectedModelId} />
